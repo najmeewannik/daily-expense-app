@@ -37,17 +37,17 @@ export const YearlyReport: React.FC<YearlyReportProps> = ({ expenses, budget }) 
   const maxMonth = monthData.reduce((prev, curr) => (curr.spent > prev.spent ? curr : prev), monthData[0]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* Year Picker Header */}
-      <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200/90 shadow-sm">
+      <div className="flex items-center justify-between bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 shadow-xs">
         <div className="flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-emerald-600" />
-          <span className="font-bold text-slate-800 text-sm">เลือกปีสรุปผล:</span>
+          <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
+          <span className="font-bold text-slate-800 text-xs sm:text-sm">เลือกปีสรุปผล:</span>
         </div>
         <select
           value={selectedYear}
           onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
-          className="bg-slate-50 border border-slate-200 text-slate-800 font-semibold text-sm rounded-xl px-3 py-1.5 focus:outline-none focus:border-emerald-500 cursor-pointer"
+          className="bg-slate-50 border border-slate-200 text-slate-800 font-semibold text-xs sm:text-sm rounded-xl px-2.5 sm:px-3 py-1.5 focus:outline-none focus:border-emerald-500 cursor-pointer"
         >
           <option value={currentYear}>ปี {currentYear + 543} (ปัจจุบัน)</option>
           <option value={currentYear - 1}>ปี {currentYear - 1 + 543}</option>
@@ -56,69 +56,69 @@ export const YearlyReport: React.FC<YearlyReportProps> = ({ expenses, budget }) 
       </div>
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
+          <div className="flex items-center justify-between text-slate-500 text-[11px] sm:text-xs font-semibold mb-1">
             <span>รวมรายจ่ายทั้งปี {selectedYear + 543}</span>
             <TrendingUp className="w-4 h-4 text-emerald-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900">
+          <div className="text-lg sm:text-2xl font-black text-slate-900 truncate">
             {formatTHB(totalYearly)}
           </div>
-          <span className="text-xs text-slate-400 mt-1 block">งบทั้งปี: {formatTHB(budget.monthlyBudget * 12)}</span>
+          <span className="text-[11px] text-slate-400 mt-0.5 block truncate">งบทั้งปี: {formatTHB(budget.monthlyBudget * 12)}</span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
+          <div className="flex items-center justify-between text-slate-500 text-[11px] sm:text-xs font-semibold mb-1">
             <span>เฉลี่ยเดือนละ</span>
             <Award className="w-4 h-4 text-blue-500" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900">
+          <div className="text-lg sm:text-2xl font-black text-slate-900 truncate">
             {formatTHB(averageMonthly)}
           </div>
-          <span className="text-xs text-slate-400 mt-1 block">
+          <span className="text-[11px] text-slate-400 mt-0.5 block truncate">
             {averageMonthly <= budget.monthlyBudget ? '🟢 ต่ำกว่างบต่อเดือน' : '🔴 เกินงบต่อเดือน'}
           </span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
+          <div className="flex items-center justify-between text-slate-500 text-[11px] sm:text-xs font-semibold mb-1">
             <span>เดือนที่จ่ายสูงสุด</span>
             <span className="text-rose-500 font-bold text-xs">High</span>
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900 truncate">
+          <div className="text-lg sm:text-2xl font-black text-slate-900 truncate">
             {maxMonth.spent > 0 ? formatTHB(maxMonth.spent) : '฿0'}
           </div>
-          <span className="text-xs text-slate-400 mt-1 block">
+          <span className="text-[11px] text-slate-400 mt-0.5 block truncate">
             {maxMonth.spent > 0 ? `เดือน ${maxMonth.monthName}` : 'ยังไม่มีข้อมูล'}
           </span>
         </div>
       </div>
 
       {/* 12-Month Bar Chart */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs overflow-hidden">
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <h3 className="font-bold text-slate-800 text-base">เปรียบเทียบรายจ่ายทั้ง 12 เดือน</h3>
-            <p className="text-xs text-slate-500 mt-0.5">เส้นประสีแดงคืองบประมาณต่อเดือน ({formatTHB(budget.monthlyBudget)})</p>
+            <h3 className="font-bold text-slate-800 text-sm sm:text-base">เปรียบเทียบรายจ่ายทั้ง 12 เดือน</h3>
+            <p className="text-[11px] text-slate-500">เส้นประสีแดงคืองบต่อเดือน ({formatTHB(budget.monthlyBudget)})</p>
           </div>
         </div>
 
-        <div className="h-64 sm:h-80 w-full">
+        <div className="h-60 sm:h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={monthData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+            <BarChart data={monthData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="monthName" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="monthName" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <Tooltip
                 formatter={(val: number) => [formatTHB(val), 'ยอดจ่าย']}
-                contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
+                contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '11px' }}
               />
               <ReferenceLine y={budget.monthlyBudget} stroke="#f43f5e" strokeDasharray="3 3" />
               <Bar
                 dataKey="spent"
                 fill="#3b82f6"
-                radius={[6, 6, 0, 0]}
+                radius={[4, 4, 0, 0]}
               />
             </BarChart>
           </ResponsiveContainer>

@@ -1,14 +1,14 @@
 import { CategoryOption } from '../types/expense';
 
 export const DEFAULT_CATEGORIES: CategoryOption[] = [
-  { id: 'food', name: 'อาหาร & เครื่องดื่ม', icon: '🍔', color: '#f59e0b' },
-  { id: 'transport', name: 'การเดินทาง', icon: '🚗', color: '#3b82f6' },
-  { id: 'shopping', name: 'ช้อปปิ้ง', icon: '🛍️', color: '#ec4899' },
-  { id: 'bills', name: 'บิล & ค่าน้ำค่าไฟ', icon: '💡', color: '#ef4444' },
-  { id: 'personal', name: 'ของใช้ส่วนตัว', icon: '📦', color: '#8b5cf6' },
-  { id: 'entertainment', name: 'บันเทิง & พักผ่อน', icon: '🎬', color: '#06b6d4' },
-  { id: 'health', name: 'สุขภาพ & ยา', icon: '💊', color: '#10b981' },
-  { id: 'other', name: 'อื่นๆ', icon: '📌', color: '#64748b' },
+  { id: 'food', name: 'อาหาร & เครื่องดื่ม', icon: '🍔', color: '#f59e0b', defaultMonthlyBudget: 6000 },
+  { id: 'transport', name: 'การเดินทาง', icon: '🚗', color: '#3b82f6', defaultMonthlyBudget: 2500 },
+  { id: 'shopping', name: 'ช้อปปิ้ง', icon: '🛍️', color: '#ec4899', defaultMonthlyBudget: 2000 },
+  { id: 'bills', name: 'บิล & ค่าน้ำค่าไฟ', icon: '💡', color: '#ef4444', defaultMonthlyBudget: 3500 },
+  { id: 'personal', name: 'ของใช้ส่วนตัว', icon: '📦', color: '#8b5cf6', defaultMonthlyBudget: 1000 },
+  { id: 'entertainment', name: 'บันเทิง & พักผ่อน', icon: '🎬', color: '#06b6d4', defaultMonthlyBudget: 1000 },
+  { id: 'health', name: 'สุขภาพ & ยา', icon: '💊', color: '#10b981', defaultMonthlyBudget: 1000 },
+  { id: 'other', name: 'อื่นๆ', icon: '📌', color: '#64748b', defaultMonthlyBudget: 1000 },
 ];
 
 export const formatTHB = (amount: number): string => {

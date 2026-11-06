@@ -54,6 +54,17 @@ export const App: React.FC = () => {
       .reduce((acc, curr) => acc + curr.amount, 0);
   }, [expenses, currentMonthStr]);
 
+  // Map of spending by category for the current month
+  const categorySpentMap = useMemo(() => {
+    const map: { [categoryName: string]: number } = {};
+    expenses
+      .filter((e) => e.date.startsWith(currentMonthStr))
+      .forEach((e) => {
+        map[e.category] = (map[e.category] || 0) + e.amount;
+      });
+    return map;
+  }, [expenses, currentMonthStr]);
+
   // Today's expense list
   const todayExpenses = useMemo(() => {
     return expenses.filter((e) => e.date === todayStr);
@@ -82,7 +93,6 @@ export const App: React.FC = () => {
       const remote = await fetchRemoteData(gSheetUrl);
       if (remote) {
         if (remote.expenses && remote.expenses.length > 0) {
-          // Merge remote expenses with local (prefer newer by ID)
           const mergedMap = new Map<string, Expense>();
           expenses.forEach((e) => mergedMap.set(e.id, e));
           remote.expenses.forEach((e) => mergedMap.set(e.id, e));
@@ -101,7 +111,7 @@ export const App: React.FC = () => {
         lastSyncedAt: new Date().toLocaleTimeString('th-TH'),
         error: null,
       });
-    } catch (err) {
+    } catch (_) {
       setSyncStatus((prev) => ({
         ...prev,
         isSyncing: false,
@@ -169,7 +179,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col antialiased">
       <Navbar
         currentTab={currentTab}
         onTabChange={setCurrentTab}
@@ -178,19 +188,25 @@ export const App: React.FC = () => {
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+      {/* Main Container with bottom padding on mobile for Bottom Navigation Bar */}
+      <main className="flex-1 max-w-4xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-24 sm:pb-8">
         {/* Budget overview always visible */}
         <BudgetMonitor
           todaySpent={todaySpent}
           monthSpent={monthSpent}
           budget={budget}
+          categorySpentMap={categorySpentMap}
           onEditBudget={() => setIsSettingsOpen(true)}
         />
 
         {/* Tab 1: Today View (Expense Form + Today's list) */}
         {currentTab === 'today' && (
-          <div className="space-y-6">
-            <QuickExpenseForm onAddExpense={handleAddExpense} />
+          <div className="space-y-4 sm:space-y-6">
+            <QuickExpenseForm
+              onAddExpense={handleAddExpense}
+              categorySpentMap={categorySpentMap}
+              categoryBudgets={budget.categoryBudgets}
+            />
             <ExpenseList
               expenses={todayExpenses}
               onDeleteExpense={handleDeleteExpense}
@@ -201,7 +217,7 @@ export const App: React.FC = () => {
 
         {/* Tab 2: 7 Days / Weekly View */}
         {currentTab === 'weekly' && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <WeeklyReport expenses={expenses} budget={budget} />
             <ExpenseList
               expenses={expenses.slice(0, 15)}
@@ -213,7 +229,7 @@ export const App: React.FC = () => {
 
         {/* Tab 3: Monthly View */}
         {currentTab === 'monthly' && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <MonthlyReport expenses={expenses} budget={budget} />
             <ExpenseList
               expenses={expenses.filter((e) => e.date.startsWith(currentMonthStr))}
@@ -225,7 +241,7 @@ export const App: React.FC = () => {
 
         {/* Tab 4: Yearly View */}
         {currentTab === 'yearly' && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <YearlyReport expenses={expenses} budget={budget} />
             <ExpenseList
               expenses={expenses.slice(0, 20)}
@@ -236,9 +252,9 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-400">
-        <p>Daily Expense Tracker • 100% Free & Personal • Powered by Google Sheets Database</p>
+      {/* Footer (Hidden on small mobile screens to save vertical space) */}
+      <footer className="hidden sm:block border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-400">
+        <p>Daily Expense Tracker • 100% Free &amp; Personal • Powered by Google Sheets Database</p>
       </footer>
 
       {/* Settings & Connect Modal */}

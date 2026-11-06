@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { BudgetConfig, Expense } from '../types/expense';
 import { testGoogleSheetConnection } from '../services/googleSheetApi';
 import { exportExpensesJSON, exportExpensesCSV } from '../services/storage';
-import { X, Check, AlertCircle, Download, FileSpreadsheet, Sliders, Database, Trash2 } from 'lucide-react';
+import { DEFAULT_CATEGORIES } from '../utils/formatters';
+import { X, Check, AlertCircle, Download, FileSpreadsheet, Sliders, Database, Trash2, Layers } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -30,6 +31,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [urlInput, setUrlInput] = useState(gSheetUrl);
   const [dailyBudgetInput, setDailyBudgetInput] = useState(budget.dailyBudget.toString());
   const [monthlyBudgetInput, setMonthlyBudgetInput] = useState(budget.monthlyBudget.toString());
+  const [categoryBudgetsInput, setCategoryBudgetsInput] = useState<{ [key: string]: string }>(() => {
+    const initial: { [key: string]: string } = {};
+    DEFAULT_CATEGORIES.forEach((cat) => {
+      initial[cat.name] = (budget.categoryBudgets?.[cat.name] || cat.defaultMonthlyBudget || 1000).toString();
+    });
+    return initial;
+  });
+
   const [testStatus, setTestStatus] = useState<{ testing: boolean; message: string | null; success: boolean | null }>({
     testing: false,
     message: null,
@@ -48,11 +57,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
+  const handleCategoryBudgetChange = (catName: string, value: string) => {
+    setCategoryBudgetsInput((prev) => ({
+      ...prev,
+      [catName]: value,
+    }));
+  };
+
   const handleSaveBudget = (e: React.FormEvent) => {
     e.preventDefault();
     const d = parseFloat(dailyBudgetInput) || 500;
     const m = parseFloat(monthlyBudgetInput) || 15000;
-    onSaveBudget({ dailyBudget: d, monthlyBudget: m });
+
+    const parsedCategoryBudgets: { [key: string]: number } = {};
+    Object.entries(categoryBudgetsInput).forEach(([catName, valStr]) => {
+      parsedCategoryBudgets[catName] = parseFloat(valStr) || 0;
+    });
+
+    onSaveBudget({
+      dailyBudget: d,
+      monthlyBudget: m,
+      categoryBudgets: parsedCategoryBudgets,
+    });
     setBudgetSaved(true);
     setTimeout(() => setBudgetSaved(false), 2000);
   };
@@ -78,17 +104,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 p-6 space-y-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-100 p-4 sm:p-6 space-y-5">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
-              <Sliders className="w-5 h-5" />
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+              <Sliders className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-800 text-lg">การตั้งค่าระบบ</h3>
-              <p className="text-xs text-slate-500">จัดการฐานข้อมูล Google Sheets & คุมงบประมาณ</p>
+              <h3 className="font-bold text-slate-800 text-base sm:text-lg">การตั้งค่าระบบ</h3>
+              <p className="text-[11px] text-slate-500">จัดการฐานข้อมูล &amp; คุมงบประมาณรายหมวด</p>
             </div>
           </div>
           <button
@@ -99,14 +125,94 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
         </div>
 
-        {/* Section 1: Google Sheet Database */}
-        <div className="space-y-3 bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100">
+        {/* Section 1: Budget Settings (Daily, Monthly, Category) */}
+        <form onSubmit={handleSaveBudget} className="space-y-4 bg-slate-50 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80">
+          <div className="flex items-center justify-between">
+            <h4 className="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-1.5">
+              <Sliders className="w-4 h-4 text-emerald-600" />
+              <span>ตั้งค่างบประมาณรวม (Overall Budget)</span>
+            </h4>
+            {budgetSaved && (
+              <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                <Check className="w-3.5 h-3.5" /> บันทึกแล้ว
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-500 mb-1">งบต่อวัน (บาท)</label>
+              <input
+                type="number"
+                min="0"
+                step="10"
+                value={dailyBudgetInput}
+                onChange={(e) => setDailyBudgetInput(e.target.value)}
+                className="w-full px-3 py-2 text-xs sm:text-sm font-bold bg-white text-slate-800 rounded-xl border border-slate-200 focus:border-emerald-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-slate-500 mb-1">งบต่อเดือน (บาท)</label>
+              <input
+                type="number"
+                min="0"
+                step="100"
+                value={monthlyBudgetInput}
+                onChange={(e) => setMonthlyBudgetInput(e.target.value)}
+                className="w-full px-3 py-2 text-xs sm:text-sm font-bold bg-white text-slate-800 rounded-xl border border-slate-200 focus:border-emerald-500 outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Section 1.5: Category Budgets */}
+          <div className="pt-2 border-t border-slate-200/70">
+            <div className="flex items-center justify-between mb-2">
+              <h5 className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-blue-600" />
+                <span>งบประมาณแยกตามหมวดหมู่ (ต่อเดือน)</span>
+              </h5>
+              <span className="text-[10px] text-slate-400">(ใส่ 0 หากไม่ต้องการจำกัด)</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {DEFAULT_CATEGORIES.map((cat) => (
+                <div key={cat.id} className="flex items-center justify-between gap-2 p-1.5 px-2 bg-white rounded-xl border border-slate-200/80">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-sm select-none">{cat.icon}</span>
+                    <span className="text-xs font-medium text-slate-700 truncate">{cat.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <span className="text-xs font-bold text-slate-400">฿</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="100"
+                      value={categoryBudgetsInput[cat.name] || ''}
+                      onChange={(e) => handleCategoryBudgetChange(cat.name, e.target.value)}
+                      className="w-20 px-1.5 py-1 text-xs font-bold text-right text-slate-800 bg-slate-50 rounded-lg border border-slate-200 focus:border-emerald-500 outline-none"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+          >
+            บันทึกงบประมาณทั้งหมด
+          </button>
+        </form>
+
+        {/* Section 2: Google Sheet Database */}
+        <div className="space-y-2.5 bg-emerald-50/60 p-3.5 sm:p-4 rounded-2xl border border-emerald-100">
           <div className="flex items-center gap-2">
             <Database className="w-4 h-4 text-emerald-700" />
-            <h4 className="font-bold text-slate-800 text-sm">เชื่อมต่อ Google Sheets Database (ฟรี 100%)</h4>
+            <h4 className="font-bold text-slate-800 text-xs sm:text-sm">เชื่อมต่อ Google Sheets Database</h4>
           </div>
-          <p className="text-xs text-slate-600 leading-relaxed">
-            นำ URL ของ Google Apps Script Web App จาก Google Sheet ของคุณมาวาง เพื่อให้ระบบบันทึกแถวข้อมูลลงใน Google Drive ของคุณโดยอัตโนมัติ
+          <p className="text-[11px] text-slate-600 leading-relaxed">
+            นำ URL ของ Google Apps Script Web App จาก Google Sheet ของคุณมาวางเพื่อซิงก์ข้อมูลอัตโนมัติ
           </p>
 
           <div className="space-y-2">
@@ -118,7 +224,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className="w-full px-3 py-2 text-xs bg-white text-slate-800 rounded-xl border border-slate-200 focus:border-emerald-500 outline-none font-mono"
             />
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 type="button"
                 onClick={handleTestConnection}
@@ -153,83 +259,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
             )}
           </div>
-
-          <details className="text-xs text-slate-600 border-t border-emerald-200/60 pt-2 cursor-pointer">
-            <summary className="font-semibold text-emerald-700 select-none">
-              👉 วิธีสร้าง Google Apps Script ภายใน 2 นาที (คลิกเพื่อดู)
-            </summary>
-            <ol className="list-decimal list-inside space-y-1.5 mt-2 text-slate-600 pl-1 leading-relaxed">
-              <li>สร้าง Google Sheet เปล่าใน Google Drive ของคุณ</li>
-              <li>ไปที่เมนู <b>ส่วนขยาย (Extensions) &gt; Apps Script</b></li>
-              <li>คัดลอกโค้ดจากโฟลเดอร์ <code>google-apps-script/Code.gs</code> ไปวางทับ</li>
-              <li>กดปุ่ม <b>Deploy (ทำให้ใช้งานได้) &gt; New deployment (การทำให้ใช้งานได้ใหม่)</b></li>
-              <li>เลือกประเภทเป็น <b>Web app</b> และตั้งค่า <i>Who has access (ผู้มีสิทธิ์เข้าถึง)</i> เป็น <b>Anyone (ทุกคน)</b></li>
-              <li>กด Deploy แล้วคัดลอก Web App URL มาวางที่ช่องด้านบน</li>
-            </ol>
-          </details>
         </div>
 
-        {/* Section 2: Budget Setting */}
-        <form onSubmit={handleSaveBudget} className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-          <div className="flex items-center justify-between">
-            <h4 className="font-bold text-slate-800 text-sm">ตั้งค่างบประมาณ (Budget Limits)</h4>
-            {budgetSaved && (
-              <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
-                <Check className="w-3.5 h-3.5" /> บันทึกงบแล้ว
-              </span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">งบประมาณต่อวัน (บาท)</label>
-              <input
-                type="number"
-                min="0"
-                step="10"
-                value={dailyBudgetInput}
-                onChange={(e) => setDailyBudgetInput(e.target.value)}
-                className="w-full px-3 py-2 text-sm font-bold bg-white text-slate-800 rounded-xl border border-slate-200 focus:border-emerald-500 outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">งบประมาณต่อเดือน (บาท)</label>
-              <input
-                type="number"
-                min="0"
-                step="100"
-                value={monthlyBudgetInput}
-                onChange={(e) => setMonthlyBudgetInput(e.target.value)}
-                className="w-full px-3 py-2 text-sm font-bold bg-white text-slate-800 rounded-xl border border-slate-200 focus:border-emerald-500 outline-none"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            className="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
-          >
-            บันทึกงบประมาณ
-          </button>
-        </form>
-
         {/* Section 3: Backup & Export */}
-        <div className="space-y-3">
-          <h4 className="font-bold text-slate-800 text-sm">สำรองข้อมูล & นำเข้า (Backup & Export)</h4>
+        <div className="space-y-2.5">
+          <h4 className="font-bold text-slate-800 text-xs sm:text-sm">สำรองข้อมูล &amp; นำเข้า (Backup &amp; Export)</h4>
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => exportExpensesCSV(expenses)}
-              className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors"
+              className="flex items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors"
             >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-              <span>ส่งออก Excel (CSV)</span>
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+              <span>ส่งออก Excel</span>
             </button>
             <button
               onClick={() => exportExpensesJSON(expenses)}
-              className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors"
+              className="flex items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors"
             >
-              <Download className="w-4 h-4 text-blue-600" />
-              <span>สำรองข้อมูล (JSON)</span>
+              <Download className="w-3.5 h-3.5 text-blue-600" />
+              <span>สำรอง JSON</span>
             </button>
           </div>
 

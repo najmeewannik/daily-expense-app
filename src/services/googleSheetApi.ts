@@ -32,7 +32,7 @@ export const syncAddExpense = async (webAppUrl: string, expense: Expense): Promi
     await fetch(webAppUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'text/plain;charset=utf-8', // Google Apps Script handles text/plain with JSON body without triggering preflight OPTIONS
+        'Content-Type': 'text/plain;charset=utf-8',
       },
       body: JSON.stringify({
         action: 'add_expense',
@@ -80,6 +80,7 @@ export const syncBudgetConfig = async (webAppUrl: string, config: BudgetConfig):
         action: 'set_budget',
         dailyBudget: config.dailyBudget,
         monthlyBudget: config.monthlyBudget,
+        categoryBudgets: config.categoryBudgets,
       }),
       redirect: 'follow',
     });

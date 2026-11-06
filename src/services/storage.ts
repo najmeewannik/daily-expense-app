@@ -1,8 +1,17 @@
 import { Expense, BudgetConfig } from '../types/expense';
+import { DEFAULT_CATEGORIES } from '../utils/formatters';
 
 const EXPENSES_KEY = 'daily_expenses_v1';
 const BUDGET_KEY = 'daily_budget_config_v1';
 const GSHEET_URL_KEY = 'google_sheet_webapp_url_v1';
+
+export const getDefaultCategoryBudgets = (): { [key: string]: number } => {
+  const result: { [key: string]: number } = {};
+  DEFAULT_CATEGORIES.forEach((cat) => {
+    result[cat.name] = cat.defaultMonthlyBudget || 1000;
+  });
+  return result;
+};
 
 export const loadStoredExpenses = (): Expense[] => {
   try {
@@ -24,9 +33,27 @@ export const saveStoredExpenses = (expenses: Expense[]): void => {
 export const loadStoredBudget = (): BudgetConfig => {
   try {
     const raw = localStorage.getItem(BUDGET_KEY);
-    return raw ? JSON.parse(raw) : { dailyBudget: 500, monthlyBudget: 15000 };
+    const parsed = raw ? JSON.parse(raw) : null;
+    const defaultCategories = getDefaultCategoryBudgets();
+
+    if (parsed) {
+      return {
+        dailyBudget: Number(parsed.dailyBudget) || 500,
+        monthlyBudget: Number(parsed.monthlyBudget) || 15000,
+        categoryBudgets: { ...defaultCategories, ...(parsed.categoryBudgets || {}) },
+      };
+    }
+    return {
+      dailyBudget: 500,
+      monthlyBudget: 15000,
+      categoryBudgets: defaultCategories,
+    };
   } catch {
-    return { dailyBudget: 500, monthlyBudget: 15000 };
+    return {
+      dailyBudget: 500,
+      monthlyBudget: 15000,
+      categoryBudgets: getDefaultCategoryBudgets(),
+    };
   }
 };
 

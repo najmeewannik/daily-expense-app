@@ -10,6 +10,7 @@ export interface Expense {
 export interface BudgetConfig {
   dailyBudget: number;
   monthlyBudget: number;
+  categoryBudgets?: { [categoryName: string]: number };
 }
 
 export interface CategoryOption {
@@ -17,6 +18,7 @@ export interface CategoryOption {
   name: string;
   icon: string;
   color: string;
+  defaultMonthlyBudget?: number;
 }
 
 export type ViewTab = 'today' | 'weekly' | 'monthly' | 'yearly';

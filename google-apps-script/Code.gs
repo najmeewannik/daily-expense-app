@@ -1,21 +1,6 @@
 /**
- * ==============================================================================
  * Daily Expense Tracker - Google Apps Script Backend (Database API)
- * ==============================================================================
- * วิธีติดตั้ง:
- * 1. สร้าง Google Sheet เปล่า 1 ไฟล์ใน Google Drive (เช่น "My Daily Expenses")
- * 2. ไปที่ Extensions (ส่วนขยาย) > Apps Script
- * 3. ลบโค้ดเดิมทั้งหมดออก แล้ววางโค้ดไฟล์นี้ลงไป
- * 4. กดปุ่ม Deploy (ทำให้ใช้งานได้) > New deployment (การทำให้ใช้งานได้ใหม่)
- * 5. เลือกประเภท: Web App (เว็บแอปพลิเคชัน)
- * 6. ตั้งค่า:
- *    - Description: Expense API
- *    - Execute as: Me (ฉัน)
- *    - Who has access: Anyone (ทุกคน)
- * 7. กด Deploy และคัดลอก "Web app URL" ไปวางในหน้า Settings ของเว็บแอป
- * ==============================================================================
  */
-
 const SHEET_EXPENSES = "Expenses";
 const SHEET_CONFIG = "Config";
 
@@ -37,7 +22,6 @@ function initSheets() {
   getOrCreateSheet(ss, SHEET_EXPENSES, ["ID", "Date", "Category", "Amount", "Note", "CreatedAt"]);
   const configSheet = getOrCreateSheet(ss, SHEET_CONFIG, ["Key", "Value"]);
   
-  // ตรวจสอบและตั้งค่างบประมาณเริ่มต้นหากยังไม่มี
   const data = configSheet.getDataRange().getValues();
   const keys = data.map(r => r[0]);
   if (!keys.includes("dailyBudget")) {
@@ -45,6 +29,18 @@ function initSheets() {
   }
   if (!keys.includes("monthlyBudget")) {
     configSheet.appendRow(["monthlyBudget", 15000]);
+  }
+  if (!keys.includes("categoryBudgets")) {
+    configSheet.appendRow(["categoryBudgets", JSON.stringify({
+      "อาหาร & เครื่องดื่ม": 6000,
+      "การเดินทาง": 2500,
+      "ช้อปปิ้ง": 2000,
+      "บิล & ค่าน้ำค่าไฟ": 3500,
+      "ของใช้ส่วนตัว": 1000,
+      "บันเทิง & พักผ่อน": 1000,
+      "สุขภาพ & ยา": 1000,
+      "อื่นๆ": 1000
+    })]);
   }
 }
 
@@ -78,10 +74,17 @@ function doGet(e) {
     
     const cfgSheet = ss.getSheetByName(SHEET_CONFIG);
     const cfgData = cfgSheet.getDataRange().getValues();
-    const config = { dailyBudget: 500, monthlyBudget: 15000 };
+    const config = { dailyBudget: 500, monthlyBudget: 15000, categoryBudgets: {} };
     for (let i = 1; i < cfgData.length; i++) {
       if (cfgData[i][0] === "dailyBudget") config.dailyBudget = Number(cfgData[i][1]) || 500;
       if (cfgData[i][0] === "monthlyBudget") config.monthlyBudget = Number(cfgData[i][1]) || 15000;
+      if (cfgData[i][0] === "categoryBudgets") {
+        try {
+          config.categoryBudgets = JSON.parse(cfgData[i][1]);
+        } catch (_) {
+          config.categoryBudgets = {};
+        }
+      }
     }
     
     return jsonResponse({
@@ -140,10 +143,12 @@ function doPost(e) {
     if (action === "set_budget") {
       const daily = Number(payload.dailyBudget);
       const monthly = Number(payload.monthlyBudget);
+      const catBudgets = payload.categoryBudgets ? JSON.stringify(payload.categoryBudgets) : null;
       
       const cfgData = cfgSheet.getDataRange().getValues();
       let dailyFound = false;
       let monthlyFound = false;
+      let catFound = false;
       
       for (let i = 1; i < cfgData.length; i++) {
         if (cfgData[i][0] === "dailyBudget") {
@@ -154,9 +159,14 @@ function doPost(e) {
           cfgSheet.getRange(i + 1, 2).setValue(monthly);
           monthlyFound = true;
         }
+        if (cfgData[i][0] === "categoryBudgets" && catBudgets) {
+          cfgSheet.getRange(i + 1, 2).setValue(catBudgets);
+          catFound = true;
+        }
       }
       if (!dailyFound) cfgSheet.appendRow(["dailyBudget", daily]);
       if (!monthlyFound) cfgSheet.appendRow(["monthlyBudget", monthly]);
+      if (!catFound && catBudgets) cfgSheet.appendRow(["categoryBudgets", catBudgets]);
       
       return jsonResponse({ success: true, message: "Budget updated" });
     }
