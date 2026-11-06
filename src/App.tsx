@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Expense, BudgetConfig, ViewTab, SyncStatus } from './types/expense';
+import { useApp } from './context/AppContext';
 import {
   loadStoredExpenses,
   saveStoredExpenses,
@@ -26,6 +27,7 @@ import { YearlyReport } from './components/YearlyReport';
 import { SettingsModal } from './components/SettingsModal';
 
 export const App: React.FC = () => {
+  const { t } = useApp();
   const [expenses, setExpenses] = useState<Expense[]>(loadStoredExpenses);
   const [budget, setBudget] = useState<BudgetConfig>(loadStoredBudget);
   const [gSheetUrl, setGSheetUrl] = useState<string>(loadGSheetUrl);
@@ -179,7 +181,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col antialiased">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col antialiased transition-colors">
       <Navbar
         currentTab={currentTab}
         onTabChange={setCurrentTab}
@@ -210,7 +212,7 @@ export const App: React.FC = () => {
             <ExpenseList
               expenses={todayExpenses}
               onDeleteExpense={handleDeleteExpense}
-              title="รายการรายจ่ายวันนี้"
+              title={t('todayListTitle')}
             />
           </div>
         )}
@@ -222,7 +224,7 @@ export const App: React.FC = () => {
             <ExpenseList
               expenses={expenses.slice(0, 15)}
               onDeleteExpense={handleDeleteExpense}
-              title="รายการรายจ่ายล่าสุด"
+              title={t('recentListTitle')}
             />
           </div>
         )}
@@ -234,7 +236,7 @@ export const App: React.FC = () => {
             <ExpenseList
               expenses={expenses.filter((e) => e.date.startsWith(currentMonthStr))}
               onDeleteExpense={handleDeleteExpense}
-              title={`รายการรายจ่ายเดือนนี้ (${currentMonthStr})`}
+              title={`${t('monthlyListTitle')} (${currentMonthStr})`}
             />
           </div>
         )}
@@ -246,15 +248,15 @@ export const App: React.FC = () => {
             <ExpenseList
               expenses={expenses.slice(0, 20)}
               onDeleteExpense={handleDeleteExpense}
-              title="ประวัติรายการทั้งหมด (20 รายการล่าสุด)"
+              title={t('allHistoryTitle')}
             />
           </div>
         )}
       </main>
 
       {/* Footer (Hidden on small mobile screens to save vertical space) */}
-      <footer className="hidden sm:block border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-400">
-        <p>Daily Expense Tracker • 100% Free &amp; Personal • Powered by Google Sheets Database</p>
+      <footer className="hidden sm:block border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-6 text-center text-xs text-slate-400 dark:text-slate-500 transition-colors">
+        <p>{t('footerText')}</p>
       </footer>
 
       {/* Settings & Connect Modal */}
